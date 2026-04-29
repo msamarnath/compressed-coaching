@@ -1,0 +1,47 @@
+# Test Case Definitions
+# This file defines the test specification for a product feature.
+# Both Dev (02_dev) and QA (03_qa) maintain their own copy of this file.
+#
+# Dev tests focus on: unit tests, service layer tests, API route tests
+# QA tests focus on: integration tests, end-to-end tests, user flow tests
+#
+# Each top-level key is a functional area (e.g., signup, listing, generation).
+# Under each area, list individual test cases.
+#
+# Required fields per test:
+#   name        - Short descriptive name of the test
+#   type        - One of: unit test, api test, integration test, e2e test
+#   status      - One of: created, in_progress, completed
+#
+# Optional fields:
+#   input       - Test input data
+#   output      - Expected output or assertion
+#   endpoint    - API endpoint (for api/integration tests)
+#   method      - HTTP method (for api/integration tests)
+#   reference   - File path and line range for the test implementation
+#   setup       - Preconditions or test data setup
+#   tags        - Labels for categorization (e.g., smoke, regression, happy-path)
+#
+# Status values:
+#   created     - Test case defined, not yet implemented
+#   in_progress - Test being written or debugged
+#   completed   - Test implemented and passing
+
+version: "0.1.0"
+
+# functional_area:
+#   - name: "test case name"
+#     type: "unit test"
+#     input: { field: "value" }
+#     output: "expected result"
+#     status: "created"
+#     reference: "__tests__/feature.test.ts:1-50"
+#
+#   - name: "test case name"
+#     type: "api test"
+#     endpoint: "/api/resource"
+#     method: "POST"
+#     input: { field: "value" }
+#     output: "expected result"
+#     status: "created"
+#     reference: "tests/api/feature.api.test.ts:1-30"

@@ -1,0 +1,44 @@
+---
+alwaysApply: true
+---
+
+# Next.js Application Rules
+
+## Next.js Best Practices
+
+- **App Router:** All new routes must be created inside the `app/` directory. Do not use the legacy `pages/` router.
+- **Server Components:** Prioritize React Server Components (RSC) for data fetching and rendering. Use `'use client'` only when interactivity is required.
+- **Component Organization:** Organize components logically into the `components/` directory. Group related components within subdirectories.
+- **Services:** Organize any common code between routes into services under the `lib/services` directory
+- **Server Actions:** Use React Server Actions for handling form submissions and mutations, rather than creating separate API routes.
+- **State Management:** Use the URL for shareable state when appropriate, and manage client state with the Zustand library found in `src/store/`.
+
+## API Conventions
+
+- All API routes for Server Actions should be defined in `app/api/`.
+- Use absolute imports for better code navigation, e.g., `@/components/Button`.
+
+# Next.js Application Rules
+
+## Next.js Best Practices
+
+- **App Router:** All new routes must be created inside the `app/` directory. Do not use the legacy `pages/` router.
+- **Server Components:** Prioritize React Server Components (RSC) for data fetching and rendering. Use `'use client'` only when interactivity is required.
+- **Component Organization:** Organize components logically into the `components/` directory. Group related components within subdirectories.
+- **Services:** Organize any common code between routes into services under the `lib/services` directory
+- **Server Actions:** Use React Server Actions for handling form submissions and mutations, rather than creating separate API routes.
+- **State Management:** Use the URL for shareable state when appropriate, and manage client state with the Zustand library found in `src/store/`.
+
+## API Conventions
+
+- All API routes for Server Actions should be defined in `app/api/`.
+- Use absolute imports for better code navigation, e.g., `@/components/Button`.
+
+## shadcn/ui Best Practices
+
+- **UI Components:** Use `shadcn/ui` for all UI elements. Do not use plain HTML elements for interactive components like `button`, `input`, or `table`.
+- **Component Imports:** Import UI components from the `@/components/ui` alias. For example, `import { Button } from "@/components/ui/button";`.
+- **Customization:** Customize components using props and Tailwind CSS classes. Avoid direct modification of the base shadcn files.
+- **Form Patterns:** Use the `shadcn/ui` `Form` component integration with `react-hook-form` and `zod` for all new forms.
+- **UI Consistency:** Ensure all new components and pages use the installed `shadcn/ui` components for a consistent look and feel across the application.
+- **Data Display:** When displaying tabular data, use the `shadcn/ui` `Table` component. For status indicators, use the `Badge` component.

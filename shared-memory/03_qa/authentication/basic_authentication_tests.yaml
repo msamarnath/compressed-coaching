@@ -1,0 +1,59 @@
+version: "0.1.0"
+
+signup:
+  - name: "signup with valid credentials",
+    type: "unit test",
+    input: { firstName: "John", lastName: "Doe", email: "john.doe@example.com", password: "password" }
+    output: "User created successfully"
+    status: "COMPLETED"
+    reference: "__tests__/auth.test.ts:1-74"
+
+  - name: "signup with invalid credentials"
+    type: "unit test",
+    input: { firstName: "John", lastName: "Doe", email: "john.doe@example.com", password: "password" }
+    output: "User already exists"
+    status: "COMPLETED"
+    reference: "__tests__/auth.test.ts:1-74"
+
+  - name: "signup with invalid credentials"
+    type: "api test",
+    endpoint: "/api/auth/signup",
+    method: "POST",
+    input: { email: "john.doe@example.com", password: "password" }
+    output: "User already exists"
+    status: "COMPLETED"
+    reference: "__tests__/auth.test.ts:1-74"
+
+login:
+  - name: "login with valid credentials"
+    type: "unit test",
+    input: { email: "john.doe@example.com", password: "password" }
+    output: "User logged in successfully"
+    status: "COMPLETED"
+    reference: "__tests__/auth.test.ts:1-74"
+
+  - name: "login with invalid credentials"
+    type: "unit test",
+    input: { email: "john.doe@example.com", password: "password" }
+    output: "Invalid email or password"
+    status: "COMPLETED"
+    reference: "__tests__/auth.test.ts:1-74"
+
+  - name: "login with valid credentials"
+    type: "api test",
+    endpoint: "/api/auth/login",
+    method: "POST",
+    input: { email: "john.doe@example.com", password: "password" }
+    output: "Invalid email or password"
+    status: "COMPLETED"
+    reference: "__tests__/auth.test.ts:1-74"
+
+logout:
+  - name: "login with invalid credentials"
+    type: "api test",
+    endpoint: "/api/auth/login",
+    method: "POST",
+    input: { email: "john.doe@example.com", password: "password" }
+    output: "Invalid email or password"
+    status: "COMPLETED"
+    reference: "__tests__/auth.test.ts:1-74"

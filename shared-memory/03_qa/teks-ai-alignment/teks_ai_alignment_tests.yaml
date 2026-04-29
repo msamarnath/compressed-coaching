@@ -1,0 +1,84 @@
+version: "0.1.0"
+
+generation:
+  - name: "generation request with valid TEKS selection returns MCQ"
+    type: "integration test"
+    setup: "authenticated session, OpenAI API mocked"
+    input: { subject: "Mathematics", grade_level: "Grade 3", strand_name: "Number and operations", standard_code: "TEKS.MA.3.2.A", standard_description: "compose and decompose numbers", topic_specifics: "place value" }
+    output: "200 with MCQ containing title, description, question, and 4 choices"
+    status: "created"
+    reference: "tests/integration/teks-generation.integration.test.ts"
+
+  - name: "generation validates required fields"
+    type: "integration test"
+    setup: "authenticated session"
+    input: { subject: "Mathematics" }
+    output: "400 with validation error listing missing fields"
+    status: "created"
+    reference: "tests/integration/teks-generation.integration.test.ts"
+
+  - name: "generation handles AI service failure"
+    type: "integration test"
+    setup: "authenticated session, OpenAI API mocked to fail"
+    input: { subject: "Mathematics", grade_level: "Grade 3", strand_name: "Number and operations", standard_code: "TEKS.MA.3.2.A", standard_description: "compose and decompose numbers" }
+    output: "500 with user-friendly error message"
+    status: "created"
+    reference: "tests/integration/teks-generation.integration.test.ts"
+
+  - name: "generated MCQ has exactly 4 choices with 1 correct"
+    type: "integration test"
+    setup: "authenticated session, OpenAI API mocked"
+    input: { subject: "Science", grade_level: "Grade 5", strand_name: "Matter and energy", standard_code: "TEKS.SC.5.5.A", standard_description: "classify matter based on measurable properties" }
+    output: "response choices array has length 4, exactly one has is_correct true"
+    status: "created"
+    reference: "tests/integration/teks-generation.integration.test.ts"
+
+teks_selection:
+  - name: "teacher selects TEKS standard through cascading dropdowns"
+    type: "e2e test"
+    setup: "teacher logged in, on /mcqs/create page, clicks 'Generate with TEKS'"
+    input: "select Mathematics > Grade 3 > Number and operations > TEKS.MA.3.2.A"
+    output: "all dropdowns populated, standard description visible, Generate button enabled"
+    status: "created"
+    reference: "tests/e2e/teks-generation.e2e.test.ts"
+
+  - name: "dropdown resets when parent selection changes"
+    type: "e2e test"
+    setup: "teacher has selected Mathematics > Grade 3 > a strand"
+    input: "change subject to Science"
+    output: "grade, strand, and standard dropdowns reset to empty"
+    status: "created"
+    reference: "tests/e2e/teks-generation.e2e.test.ts"
+
+  - name: "teacher generates MCQ and reviews in form"
+    type: "e2e test"
+    setup: "teacher has selected a TEKS standard, clicked Generate"
+    input: "wait for generation to complete"
+    output: "dialog closes, MCQ form populated with title, description, question, and 4 choices"
+    status: "created"
+    reference: "tests/e2e/teks-generation.e2e.test.ts"
+
+  - name: "teacher edits generated MCQ before saving"
+    type: "e2e test"
+    setup: "MCQ form populated with generated content"
+    input: "modify title, change one choice text, click Create"
+    output: "MCQ saved with teacher's modifications, redirected to /mcqs listing"
+    status: "created"
+    reference: "tests/e2e/teks-generation.e2e.test.ts"
+
+error_handling:
+  - name: "generation error displays user-friendly message"
+    type: "e2e test"
+    setup: "teacher has selected a TEKS standard, API returns error"
+    input: "click Generate"
+    output: "error message displayed in dialog, form not populated"
+    status: "created"
+    reference: "tests/e2e/teks-generation.e2e.test.ts"
+
+  - name: "generate button disabled until all required fields selected"
+    type: "e2e test"
+    setup: "teacher opens TEKS generation dialog"
+    input: "check Generate button state before and after selecting all fields"
+    output: "button disabled when fields missing, enabled when all required fields selected"
+    status: "created"
+    reference: "tests/e2e/teks-generation.e2e.test.ts"

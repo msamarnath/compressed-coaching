@@ -1,0 +1,111 @@
+version: "0.1.0"
+
+create:
+  - name: "create MCQ through full stack"
+    type: "integration test"
+    setup: "authenticated session for teacher@example.com"
+    input: { title: "Math Question", question: "What is 2+2?", choices: [{ choiceText: "3", isCorrect: false }, { choiceText: "4", isCorrect: true }, { choiceText: "5", isCorrect: false }] }
+    output: "MCQ persisted in database with correct choices and ownership"
+    status: "in_progress"
+    reference: "tests/integration/mcq.integration.test.ts"
+
+  - name: "teacher creates MCQ end-to-end"
+    type: "e2e test"
+    setup: "teacher logged in, on /mcqs/create page"
+    input: "fill title, question, add 3 choices, select correct, click Create"
+    output: "redirected to /mcqs, new MCQ appears in listing"
+    status: "created"
+    reference: "tests/e2e/mcq.e2e.test.ts"
+
+listing:
+  - name: "list MCQs with search returns correct results"
+    type: "integration test"
+    setup: "3 MCQs created, one with 'geometry' in title"
+    input: { search: "geometry", page: 1, limit: 10 }
+    output: "returns 1 result matching search term"
+    status: "in_progress"
+    reference: "tests/integration/mcq.integration.test.ts"
+
+  - name: "teacher searches and finds MCQ"
+    type: "e2e test"
+    setup: "teacher logged in, MCQs exist in library"
+    input: "type search term in search field, press Enter"
+    output: "table filters to show matching MCQs"
+    status: "created"
+    reference: "tests/e2e/mcq.e2e.test.ts"
+
+edit:
+  - name: "update MCQ persists all changes"
+    type: "integration test"
+    setup: "existing MCQ with 3 choices"
+    input: { title: "Updated Title", question: "Updated question?", choices: [{ choiceText: "New A", isCorrect: true }, { choiceText: "New B", isCorrect: false }] }
+    output: "MCQ updated in database, old choices replaced with new ones"
+    status: "in_progress"
+    reference: "tests/integration/mcq.integration.test.ts"
+
+  - name: "teacher edits MCQ and verifies changes"
+    type: "e2e test"
+    setup: "teacher logged in, existing MCQ in library"
+    input: "click Edit from actions dropdown, modify title and choices, click Save"
+    output: "redirected to /mcqs, updated title visible in listing"
+    status: "created"
+    reference: "tests/e2e/mcq.e2e.test.ts"
+
+delete:
+  - name: "delete MCQ cascades to choices and attempts"
+    type: "integration test"
+    setup: "existing MCQ with choices and recorded attempts"
+    input: { id: "mcq-with-attempts" }
+    output: "MCQ, all choices, and all attempts removed from database"
+    status: "in_progress"
+    reference: "tests/integration/mcq.integration.test.ts"
+
+  - name: "teacher deletes MCQ with confirmation"
+    type: "e2e test"
+    setup: "teacher logged in, existing MCQ in library"
+    input: "click Delete from actions dropdown, confirm in dialog"
+    output: "MCQ removed from listing table"
+    status: "created"
+    reference: "tests/e2e/mcq.e2e.test.ts"
+
+  - name: "ownership enforcement blocks non-owner operations"
+    type: "integration test"
+    setup: "MCQ owned by teacher A, request from teacher B session"
+    input: { method: "DELETE", id: "teacher-a-mcq-id" }
+    output: "403 forbidden response"
+    status: "created"
+    reference: "tests/integration/mcq.integration.test.ts"
+
+preview:
+  - name: "teacher previews MCQ and submits attempt"
+    type: "e2e test"
+    setup: "teacher logged in, existing MCQ with choices"
+    input: "navigate to preview, select answer, click Submit"
+    output: "result displayed showing correct/incorrect feedback"
+    status: "created"
+    reference: "tests/e2e/mcq.e2e.test.ts"
+
+validation:
+  - name: "form validation prevents submission with fewer than 2 choices"
+    type: "e2e test"
+    setup: "teacher on /mcqs/create page"
+    input: "fill title and question, add only 1 choice, click Create"
+    output: "validation error displayed, form not submitted"
+    status: "created"
+    reference: "tests/e2e/mcq.e2e.test.ts"
+
+  - name: "form validation requires exactly one correct answer"
+    type: "e2e test"
+    setup: "teacher on /mcqs/create page"
+    input: "fill form with 3 choices, none marked correct, click Create"
+    output: "validation error displayed, form not submitted"
+    status: "created"
+    reference: "tests/e2e/mcq.e2e.test.ts"
+
+  - name: "viewing nonexistent MCQ shows error"
+    type: "integration test"
+    setup: "authenticated session"
+    input: { id: "nonexistent-id" }
+    output: "404 not found response"
+    status: "created"
+    reference: "tests/integration/mcq.integration.test.ts"

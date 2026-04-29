@@ -1,0 +1,110 @@
+version: "0.1.0"
+
+signup:
+  - name: "hashPassword produces unique hashes with salt"
+    type: "unit test"
+    input: { password: "securePass123" }
+    output: "Returns salted hash string different on each call"
+    status: "completed"
+    reference: "__tests__/auth.test.ts:5-20"
+
+  - name: "verifyPassword matches correct password"
+    type: "unit test"
+    input: { password: "securePass123", hash: "previously hashed value" }
+    output: "Returns true"
+    status: "completed"
+    reference: "__tests__/auth.test.ts:22-35"
+
+  - name: "verifyPassword rejects wrong password"
+    type: "unit test"
+    input: { password: "wrongPassword", hash: "previously hashed value" }
+    output: "Returns false"
+    status: "completed"
+    reference: "__tests__/auth.test.ts:37-50"
+
+  - name: "signup creates user and returns session cookie"
+    type: "api test"
+    endpoint: "/api/auth/signup"
+    method: "POST"
+    input: { firstName: "Jane", lastName: "Smith", email: "jane.smith@example.com", password: "password123" }
+    output: "201 with user object and Set-Cookie header"
+    status: "completed"
+    reference: "__tests__/auth.api.test.ts:5-30"
+
+  - name: "signup rejects duplicate email"
+    type: "api test"
+    endpoint: "/api/auth/signup"
+    method: "POST"
+    input: { firstName: "Jane", lastName: "Smith", email: "jane.smith@example.com", password: "password123" }
+    output: "409 with error message 'Email already exists'"
+    status: "completed"
+    reference: "__tests__/auth.api.test.ts:32-50"
+
+  - name: "signup rejects missing required fields"
+    type: "api test"
+    endpoint: "/api/auth/signup"
+    method: "POST"
+    input: { email: "jane.smith@example.com" }
+    output: "400 with error message 'Missing required fields'"
+    status: "completed"
+    reference: "__tests__/auth.api.test.ts:52-68"
+
+login:
+  - name: "login with valid credentials returns session"
+    type: "api test"
+    endpoint: "/api/auth/login"
+    method: "POST"
+    input: { email: "jane.smith@example.com", password: "password123" }
+    output: "200 with user object and Set-Cookie header"
+    status: "completed"
+    reference: "__tests__/auth.api.test.ts:72-95"
+
+  - name: "login with wrong password returns 401"
+    type: "api test"
+    endpoint: "/api/auth/login"
+    method: "POST"
+    input: { email: "jane.smith@example.com", password: "wrongpassword" }
+    output: "401 with error message 'Invalid credentials'"
+    status: "completed"
+    reference: "__tests__/auth.api.test.ts:97-112"
+
+  - name: "login with nonexistent email returns 401"
+    type: "api test"
+    endpoint: "/api/auth/login"
+    method: "POST"
+    input: { email: "nobody@example.com", password: "password123" }
+    output: "401 with error message 'Invalid credentials'"
+    status: "completed"
+    reference: "__tests__/auth.api.test.ts:114-128"
+
+session:
+  - name: "signSession creates valid signed token"
+    type: "unit test"
+    input: { userId: "abc123", email: "test@example.com" }
+    output: "Returns base64-encoded signed token"
+    status: "completed"
+    reference: "__tests__/auth.test.ts:54-70"
+
+  - name: "verifySession validates unexpired token"
+    type: "unit test"
+    input: { token: "valid signed token" }
+    output: "Returns decoded payload with userId and email"
+    status: "completed"
+    reference: "__tests__/auth.test.ts:72-88"
+
+  - name: "verifySession rejects expired token"
+    type: "unit test"
+    input: { token: "expired signed token" }
+    output: "Returns null"
+    status: "completed"
+    reference: "__tests__/auth.test.ts:90-105"
+
+logout:
+  - name: "logout clears session cookie"
+    type: "api test"
+    endpoint: "/api/auth/logout"
+    method: "POST"
+    input: {}
+    output: "200 with Set-Cookie clearing session"
+    status: "completed"
+    reference: "__tests__/auth.api.test.ts:132-145"

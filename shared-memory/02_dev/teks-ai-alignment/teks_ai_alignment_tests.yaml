@@ -1,0 +1,96 @@
+version: "0.1.0"
+
+teks_data:
+  - name: "TEKS data contains Mathematics standards for Grades 3-4"
+    type: "unit test"
+    input: { subject: "Mathematics" }
+    output: "returns grades 3 and 4 with strands and standards"
+    status: "completed"
+    reference: "__tests__/teks.test.ts:5-25"
+
+  - name: "TEKS data contains Science standards for Grades 5-6"
+    type: "unit test"
+    input: { subject: "Science" }
+    output: "returns grades 5 and 6 with strands and standards"
+    status: "completed"
+    reference: "__tests__/teks.test.ts:27-47"
+
+  - name: "TEKS lookup returns strands for valid subject and grade"
+    type: "unit test"
+    input: { subject: "Mathematics", grade: "Grade 3" }
+    output: "returns array of strand objects with names and standards"
+    status: "completed"
+    reference: "__tests__/teks.test.ts:49-65"
+
+  - name: "TEKS lookup returns empty for invalid subject"
+    type: "unit test"
+    input: { subject: "History" }
+    output: "returns empty array"
+    status: "completed"
+    reference: "__tests__/teks.test.ts:67-75"
+
+validation:
+  - name: "GenerationRequestSchema validates complete request"
+    type: "unit test"
+    input: { subject: "Mathematics", grade_level: "Grade 3", strand_name: "Number and operations", standard_code: "TEKS.MA.3.2.A", standard_description: "compose and decompose numbers" }
+    output: "validation passes"
+    status: "completed"
+    reference: "__tests__/mcq-generation-schema.test.ts:5-20"
+
+  - name: "GenerationRequestSchema rejects missing required fields"
+    type: "unit test"
+    input: { subject: "Mathematics" }
+    output: "validation fails with missing field errors"
+    status: "completed"
+    reference: "__tests__/mcq-generation-schema.test.ts:22-38"
+
+  - name: "GeneratedMcqSchema validates correct AI response"
+    type: "unit test"
+    input: { title: "Test", description: "Test", question: "Test?", choices: "4 choices with 1 correct" }
+    output: "validation passes"
+    status: "completed"
+    reference: "__tests__/mcq-generation-schema.test.ts:40-60"
+
+  - name: "GeneratedMcqSchema rejects response with wrong choice count"
+    type: "unit test"
+    input: { choices: "3 choices" }
+    output: "validation fails"
+    status: "completed"
+    reference: "__tests__/mcq-generation-schema.test.ts:62-78"
+
+generation_api:
+  - name: "generate-teks endpoint returns structured MCQ"
+    type: "api test"
+    endpoint: "/api/mcqs/generate-teks"
+    method: "POST"
+    input: { subject: "Mathematics", grade_level: "Grade 3", strand_name: "Number and operations", standard_code: "TEKS.MA.3.2.A", standard_description: "compose and decompose numbers", topic_specifics: "place value" }
+    output: "200 with generated MCQ object containing title, description, question, and 4 choices"
+    status: "in_progress"
+    reference: "__tests__/generate-teks.api.test.ts:5-40"
+
+  - name: "generate-teks rejects missing required fields"
+    type: "api test"
+    endpoint: "/api/mcqs/generate-teks"
+    method: "POST"
+    input: { subject: "Mathematics" }
+    output: "400 with validation error"
+    status: "in_progress"
+    reference: "__tests__/generate-teks.api.test.ts:42-58"
+
+  - name: "generate-teks rejects unauthenticated request"
+    type: "api test"
+    endpoint: "/api/mcqs/generate-teks"
+    method: "POST"
+    input: { subject: "Mathematics", grade_level: "Grade 3" }
+    output: "401 unauthorized"
+    status: "created"
+    reference: "__tests__/generate-teks.api.test.ts:60-72"
+
+  - name: "generate-teks handles OpenAI API failure gracefully"
+    type: "api test"
+    endpoint: "/api/mcqs/generate-teks"
+    method: "POST"
+    input: { subject: "Mathematics", grade_level: "Grade 3", strand_name: "Number and operations", standard_code: "TEKS.MA.3.2.A", standard_description: "compose and decompose numbers" }
+    output: "500 with error message about generation failure"
+    status: "created"
+    reference: "__tests__/generate-teks.api.test.ts:74-92"

@@ -1,0 +1,77 @@
+version: "0.1.0"
+
+teks_selection:
+  - name: "subject dropdown"
+    type: "ui feature"
+    fields: [subject]
+    options: [Mathematics, Science]
+    behavior: "first dropdown in cascade, selecting subject populates grade levels"
+    status: "completed"
+
+  - name: "grade level dropdown"
+    type: "ui feature"
+    fields: [gradeLevel]
+    options: ["Grade 3", "Grade 4", "Grade 5", "Grade 6"]
+    behavior: "filtered by selected subject, selecting grade populates strands"
+    status: "completed"
+
+  - name: "strand dropdown"
+    type: "ui feature"
+    fields: [strandName]
+    behavior: "filtered by selected subject and grade, selecting strand populates standards"
+    status: "completed"
+
+  - name: "standard dropdown"
+    type: "ui feature"
+    fields: [standardCode, standardDescription]
+    behavior: "filtered by selected strand, displays TEKS code and description"
+    status: "completed"
+
+  - name: "topic specifics input"
+    type: "ui feature"
+    fields: [topicSpecifics]
+    validation: [optional, maxLength500]
+    behavior: "free text input to narrow the focus of generated question"
+    status: "completed"
+
+generation:
+  - name: "TEKS generation dialog"
+    type: "ui feature"
+    fields: [subject, gradeLevel, strandName, standardCode, topicSpecifics, generateButton]
+    behavior: "modal dialog opened from MCQ create page via 'Generate with TEKS' button"
+    status: "completed"
+
+  - name: "generate TEKS-aligned MCQ"
+    type: "ai feature"
+    endpoint: "POST /api/mcqs/generate-teks"
+    model: "gpt-4o-mini"
+    input: { subject: "string", grade_level: "string", strand_name: "string", standard_code: "string", standard_description: "string", topic_specifics: "string" }
+    output: { title: "string", description: "string", question: "string", choices: "array of 4 with one correct" }
+    errors: [400_missingFields, 401_unauthorized, 500_aiGenerationError, 429_rateLimited]
+    status: "completed"
+
+  - name: "generated MCQ populates form"
+    type: "ui feature"
+    behavior: "AI-generated MCQ auto-fills the create form fields for teacher review and editing before save"
+    status: "completed"
+
+teks_data:
+  - name: "TEKS data structure"
+    type: "api feature"
+    subjects: [Mathematics, Science]
+    grades: { Mathematics: ["Grade 3", "Grade 4"], Science: ["Grade 5", "Grade 6"] }
+    behavior: "hierarchical data structure with subjects, grades, strands, and standards with codes and descriptions"
+    status: "completed"
+
+validation:
+  - name: "generation request validation"
+    type: "security feature"
+    validation: [required_subject, required_gradeLevel, required_strandName, required_standardCode, required_standardDescription]
+    schema: "Zod schema validation on request body"
+    status: "completed"
+
+  - name: "generated content validation"
+    type: "security feature"
+    validation: [exactly4_choices, exactly1_correct, non_empty_fields]
+    schema: "Zod schema validation on AI response"
+    status: "completed"

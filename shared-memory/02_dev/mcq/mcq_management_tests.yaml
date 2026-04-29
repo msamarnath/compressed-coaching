@@ -1,0 +1,164 @@
+version: "0.1.0"
+
+create:
+  - name: "create MCQ with valid data returns 201"
+    type: "api test"
+    endpoint: "/api/mcqs"
+    method: "POST"
+    input: { title: "Math Question", question: "What is 2+2?", choices: [{ choiceText: "3", isCorrect: false, orderIndex: 0 }, { choiceText: "4", isCorrect: true, orderIndex: 1 }] }
+    output: "201 with MCQ object including id and choices"
+    status: "completed"
+    reference: "__tests__/mcqs.api.test.ts:10-45"
+
+  - name: "create MCQ rejects fewer than 2 choices"
+    type: "api test"
+    endpoint: "/api/mcqs"
+    method: "POST"
+    input: { title: "Bad Question", question: "Only one choice", choices: [{ choiceText: "Only", isCorrect: true, orderIndex: 0 }] }
+    output: "400 with validation error"
+    status: "completed"
+    reference: "__tests__/mcqs.api.test.ts:47-62"
+
+  - name: "create MCQ rejects no correct answer"
+    type: "api test"
+    endpoint: "/api/mcqs"
+    method: "POST"
+    input: { title: "Bad Question", question: "No correct", choices: [{ choiceText: "A", isCorrect: false, orderIndex: 0 }, { choiceText: "B", isCorrect: false, orderIndex: 1 }] }
+    output: "400 with validation error 'Exactly one correct answer required'"
+    status: "completed"
+    reference: "__tests__/mcqs.api.test.ts:64-80"
+
+  - name: "create MCQ rejects unauthenticated request"
+    type: "api test"
+    endpoint: "/api/mcqs"
+    method: "POST"
+    input: { title: "Test", question: "Test?" }
+    output: "401 unauthorized"
+    status: "completed"
+    reference: "__tests__/mcqs.api.test.ts:82-92"
+
+  - name: "MCQService.createMcq stores boolean as integer"
+    type: "unit test"
+    input: { choices: [{ choiceText: "A", isCorrect: true }, { choiceText: "B", isCorrect: false }] }
+    output: "is_correct stored as 1 and 0 in database"
+    status: "completed"
+    reference: "__tests__/mcq-service.test.ts:8-35"
+
+listing:
+  - name: "list MCQs returns paginated results"
+    type: "api test"
+    endpoint: "/api/mcqs"
+    method: "GET"
+    input: { page: 1, limit: 10 }
+    output: "200 with mcqs array, total count, and page info"
+    status: "completed"
+    reference: "__tests__/mcqs.api.test.ts:96-120"
+
+  - name: "list MCQs filters by search keyword"
+    type: "api test"
+    endpoint: "/api/mcqs?search=math"
+    method: "GET"
+    input: { search: "math" }
+    output: "200 with filtered results matching title or question"
+    status: "completed"
+    reference: "__tests__/mcqs.api.test.ts:122-140"
+
+  - name: "list MCQs returns only current user's questions"
+    type: "api test"
+    endpoint: "/api/mcqs"
+    method: "GET"
+    input: {}
+    output: "200 with MCQs where created_by matches session user"
+    status: "completed"
+    reference: "__tests__/mcqs.api.test.ts:142-160"
+
+edit:
+  - name: "get single MCQ returns question with choices"
+    type: "api test"
+    endpoint: "/api/mcqs/:id"
+    method: "GET"
+    input: { id: "valid-mcq-id" }
+    output: "200 with MCQ object and choices array ordered by order_index"
+    status: "completed"
+    reference: "__tests__/mcqs.api.test.ts:164-185"
+
+  - name: "update MCQ replaces choices"
+    type: "api test"
+    endpoint: "/api/mcqs/:id"
+    method: "PUT"
+    input: { title: "Updated Title", question: "Updated question?", choices: [{ choiceText: "New A", isCorrect: true, orderIndex: 0 }, { choiceText: "New B", isCorrect: false, orderIndex: 1 }] }
+    output: "200 with updated MCQ and new choices"
+    status: "completed"
+    reference: "__tests__/mcqs.api.test.ts:187-215"
+
+  - name: "update MCQ rejects non-owner"
+    type: "api test"
+    endpoint: "/api/mcqs/:id"
+    method: "PUT"
+    input: { title: "Hijack" }
+    output: "403 forbidden"
+    status: "completed"
+    reference: "__tests__/mcqs.api.test.ts:217-232"
+
+delete:
+  - name: "delete MCQ removes question, choices, and attempts"
+    type: "api test"
+    endpoint: "/api/mcqs/:id"
+    method: "DELETE"
+    input: { id: "valid-mcq-id" }
+    output: "200 with success true, cascade deletes verified"
+    status: "completed"
+    reference: "__tests__/mcqs.api.test.ts:236-260"
+
+  - name: "delete MCQ rejects non-owner"
+    type: "api test"
+    endpoint: "/api/mcqs/:id"
+    method: "DELETE"
+    input: { id: "other-users-mcq-id" }
+    output: "403 forbidden"
+    status: "completed"
+    reference: "__tests__/mcqs.api.test.ts:262-275"
+
+  - name: "delete nonexistent MCQ returns 404"
+    type: "api test"
+    endpoint: "/api/mcqs/:id"
+    method: "DELETE"
+    input: { id: "nonexistent-id" }
+    output: "404 not found"
+    status: "completed"
+    reference: "__tests__/mcqs.api.test.ts:277-288"
+
+preview:
+  - name: "record attempt with correct choice"
+    type: "api test"
+    endpoint: "/api/mcqs/:id/attempts"
+    method: "POST"
+    input: { selectedChoiceId: "correct-choice-id" }
+    output: "201 with attempt object where isCorrect is true"
+    status: "completed"
+    reference: "__tests__/mcqs.api.test.ts:292-315"
+
+  - name: "record attempt with incorrect choice"
+    type: "api test"
+    endpoint: "/api/mcqs/:id/attempts"
+    method: "POST"
+    input: { selectedChoiceId: "wrong-choice-id" }
+    output: "201 with attempt object where isCorrect is false"
+    status: "completed"
+    reference: "__tests__/mcqs.api.test.ts:317-338"
+
+  - name: "get attempts returns user's attempt history"
+    type: "api test"
+    endpoint: "/api/mcqs/:id/attempts"
+    method: "GET"
+    input: { id: "valid-mcq-id" }
+    output: "200 with array of attempt objects"
+    status: "completed"
+    reference: "__tests__/mcqs.api.test.ts:340-358"
+
+  - name: "toBool handles all SQLite boolean formats"
+    type: "unit test"
+    input: { values: [0, 1, "true", "false", true, false, "1", "0"] }
+    output: "Correctly converts all formats to JavaScript boolean"
+    status: "completed"
+    reference: "__tests__/mcq-service.test.ts:38-60"

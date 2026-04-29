@@ -1,0 +1,106 @@
+version: "0.1.0"
+
+create:
+  - name: "MCQ creation form"
+    type: "ui feature"
+    fields: [title, description, question, choices, correctAnswer]
+    validation: [required_title, required_question, min2_choices, max6_choices, exactly1_correct]
+    status: "completed"
+
+  - name: "dynamic choice management"
+    type: "ui feature"
+    fields: [choiceText, isCorrect, orderIndex]
+    validation: [required_choiceText, unique_correctAnswer]
+    behavior: "add/remove/reorder choices dynamically, 2-6 allowed"
+    status: "completed"
+
+  - name: "create MCQ"
+    type: "api feature"
+    endpoint: "POST /api/mcqs"
+    input: { title: "string", description: "string", question: "string", choices: "array" }
+    output: { mcq: "object with id and choices" }
+    errors: [400_validationError, 401_unauthorized, 500_serverError]
+    status: "completed"
+
+listing:
+  - name: "MCQ listing page"
+    type: "ui feature"
+    fields: [search, pagination]
+    behavior: "table with title, description, created date, actions dropdown"
+    status: "completed"
+
+  - name: "list MCQs with search and pagination"
+    type: "api feature"
+    endpoint: "GET /api/mcqs"
+    input: { search: "string", page: "number", limit: "number" }
+    output: { mcqs: "array", total: "number", page: "number" }
+    errors: [401_unauthorized, 500_serverError]
+    status: "completed"
+
+edit:
+  - name: "MCQ edit form"
+    type: "ui feature"
+    fields: [title, description, question, choices, correctAnswer]
+    validation: [required_title, required_question, min2_choices, max6_choices, exactly1_correct]
+    behavior: "pre-populated with existing MCQ data"
+    status: "completed"
+
+  - name: "get single MCQ"
+    type: "api feature"
+    endpoint: "GET /api/mcqs/:id"
+    input: { id: "string" }
+    output: { mcq: "object with choices" }
+    errors: [401_unauthorized, 404_notFound, 500_serverError]
+    status: "completed"
+
+  - name: "update MCQ"
+    type: "api feature"
+    endpoint: "PUT /api/mcqs/:id"
+    input: { title: "string", description: "string", question: "string", choices: "array" }
+    output: { mcq: "updated object" }
+    errors: [400_validationError, 401_unauthorized, 403_forbidden, 404_notFound, 500_serverError]
+    status: "completed"
+
+delete:
+  - name: "MCQ delete confirmation"
+    type: "ui feature"
+    behavior: "confirmation dialog before deletion, cascade deletes choices and attempts"
+    status: "completed"
+
+  - name: "delete MCQ"
+    type: "api feature"
+    endpoint: "DELETE /api/mcqs/:id"
+    input: { id: "string" }
+    output: { success: true }
+    errors: [401_unauthorized, 403_forbidden, 404_notFound, 500_serverError]
+    status: "completed"
+
+preview:
+  - name: "MCQ preview page"
+    type: "ui feature"
+    fields: [question, choices_as_radio_buttons, submit_answer]
+    behavior: "quiz-taking interface showing question and choices, records attempt on submit"
+    status: "completed"
+
+  - name: "record MCQ attempt"
+    type: "api feature"
+    endpoint: "POST /api/mcqs/:id/attempts"
+    input: { selectedChoiceId: "string" }
+    output: { attempt: "object with isCorrect" }
+    errors: [400_invalidChoice, 401_unauthorized, 404_notFound, 500_serverError]
+    status: "completed"
+
+  - name: "get user attempts"
+    type: "api feature"
+    endpoint: "GET /api/mcqs/:id/attempts"
+    input: { id: "string" }
+    output: { attempts: "array" }
+    errors: [401_unauthorized, 404_notFound, 500_serverError]
+    status: "completed"
+
+ownership:
+  - name: "user ownership enforcement"
+    type: "security feature"
+    behavior: "users can only edit/delete MCQs they created"
+    validation: [created_by_matches_session_user]
+    status: "completed"

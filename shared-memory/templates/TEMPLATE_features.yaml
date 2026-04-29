@@ -1,0 +1,46 @@
+# Feature Ticket Definitions
+# This file serves as the structured feature backlog for a product feature.
+# It replaces traditional ticket systems (e.g., Jira) with an AI-readable,
+# version-controlled format that lives in the codebase.
+#
+# Each top-level key is a functional area (e.g., signup, listing, generation).
+# Under each area, list individual feature tickets.
+#
+# Required fields per feature:
+#   name        - Short descriptive name of the feature
+#   type        - One of: ui feature, api feature, security feature, middleware feature, ai feature
+#   status      - One of: created, in_progress, completed
+#
+# Optional fields (vary by type):
+#   fields      - Form fields (for ui features)
+#   validation  - Validation rules (for ui/api features)
+#   input       - Input contract (for api features)
+#   output      - Output contract (for api features)
+#   errors      - Error codes (for api features)
+#   endpoint    - API route (for api features)
+#   algorithm   - Algorithm used (for security features)
+#   protected   - Protected routes (for middleware features)
+#   public      - Public routes (for middleware features)
+#   model       - AI model used (for ai features)
+#   prompt      - Prompt strategy (for ai features)
+#
+# Status values:
+#   created     - Ticket defined, not started
+#   in_progress - Currently being implemented
+#   completed   - Implemented and verified
+
+version: "0.1.0"
+
+# functional_area:
+#   - name: "feature name"
+#     type: "ui feature"
+#     fields: [field1, field2]
+#     validation: [required, emailFormat]
+#     status: "created"
+#
+#   - name: "feature name"
+#     type: "api feature"
+#     input: { field: "type" }
+#     output: { field: "type" }
+#     errors: [400_validationError, 500_serverError]
+#     status: "created"

@@ -1,0 +1,31 @@
+---
+alwaysApply: true
+---
+
+# D1 Database Access Rules
+
+## D1 Best Practices
+
+- **Access:** The D1 database binding `DB` is accessible via the `env` object. For example: `const { results } = await env.DB.prepare(...)`.
+- **SQL Best Practices:** Use prepared statements to prevent SQL injection vulnerabilities.
+- **Client:** All D1 interactions should go through the `lib/d1-client.ts` module to centralize data access logic.
+
+## Database Migrations
+
+- **Migration Tool:** Use Wrangler commands for all database schema changes and migrations.
+- **Commands:**
+  - Create migrations: `wrangler d1 migrations create`
+  - List migrations: `wrangler d1 migrations list`
+  - Apply migrations: `wrangler d1 migrations apply`
+- **Scope:** Migrations apply to both local and remote D1 databases. However, you MUST NOT apply any migrations to reote databases.
+- **Best Practice:** Always create migrations for schema changes rather than manual SQL execution.
+
+## Parameter Binding Rules (IMPORTANT)
+
+- **Positional placeholders required:** To avoid D1 binding errors in local development, always normalize anonymous placeholders `?` to positional placeholders `?1`, `?2`, ... before binding parameters.
+- **Use shared helpers:** Always use the helpers in `lib/d1-client.ts` (`executeQuery`, `executeQueryFirst`, `executeMutation`, `executeBatch`) which:
+  - Normalize `?` → `?1`, `?2`, ... automatically
+  - Bind parameters safely
+  - Include a safe fallback for wrangler-dev binding quirks
+- **Single-row queries:** Prefer `executeQueryFirst` (internally uses `all()` + first row) rather than calling `stmt.first()` directly.
+- **Do NOT inline manually:** Do not hand-concatenate SQL with user input. If a fallback inline is ever needed, rely on the library’s built-in escape routine only.

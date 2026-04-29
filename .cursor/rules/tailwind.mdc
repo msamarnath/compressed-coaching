@@ -1,0 +1,16 @@
+---
+alwaysApply: true
+---
+
+# Tailwind CSS Rules
+
+## Tailwind Configuration
+
+- The Tailwind configuration is located at `tailwind.config.ts`.
+- All CSS imports should be in the `src/app/globals.css` file.
+
+## Styling
+
+- Use Tailwind CSS utility classes directly on components.
+- Do not write custom CSS unless absolutely necessary.
+- Follow the component styling guidelines for consistency.
