@@ -1,22 +1,26 @@
 {
-	"name": "next",
+	"name": "compressed-coaching",
 	"version": "0.1.0",
 	"private": true,
 	"scripts": {
-		"dev": "next dev --turbopack",
+		"migrate:local": "wrangler d1 migrations apply quizmaker-app-database --local -c wrangler.jsonc",
+		"migrate:remote": "wrangler d1 migrations apply quizmaker-app-database -c wrangler.jsonc",
+		"dev": "npm run migrate:local && next dev --turbopack",
 		"build": "next build",
 		"start": "next start",
 		"lint": "next lint",
 		"deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+		"deploy:with-db": "npm run migrate:remote && opennextjs-cloudflare build && opennextjs-cloudflare deploy",
 		"upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
-		"preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-		"cf-typegen": "wrangler types --env-interface CloudflareEnv ./cloudflare-env.d.ts"
+		"preview": "npm run migrate:local && opennextjs-cloudflare build && opennextjs-cloudflare preview",
+		"cf-typegen": "wrangler types -c wrangler.jsonc --env-interface CloudflareEnv ./cloudflare-env.d.ts"
 	},
 	"dependencies": {
 		"@opennextjs/cloudflare": "^1.11.0",
 		"next": "15.5.6",
 		"react": "19.1.0",
-		"react-dom": "19.1.0"
+		"react-dom": "19.1.0",
+		"zod": "^4.1.5"
 	},
 	"devDependencies": {
 		"@eslint/eslintrc": "^3",
