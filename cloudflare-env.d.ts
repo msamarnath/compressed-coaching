@@ -5,6 +5,7 @@ declare namespace Cloudflare {
 	interface Env {
 		NEXTJS_ENV: string;
 		ASSETS: Fetcher;
+		quizmaker_app_database: D1Database;
 	}
 }
 interface CloudflareEnv extends Cloudflare.Env {}

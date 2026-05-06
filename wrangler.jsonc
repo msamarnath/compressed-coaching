@@ -11,6 +11,14 @@
 		"nodejs_compat",
 		"global_fetch_strictly_public"
 	],
+	"d1_databases": [
+		{
+			"binding": "quizmaker_app_database",
+			"database_name": "quizmaker-app-database",
+			"database_id": "370f62d7-ca2b-4667-97d8-f9fd97f7bc38"
+		}
+	],
+	"migrations_dir": "migrations/quizmaker-app-database",
 	"assets": {
 		"binding": "ASSETS",
 		"directory": ".open-next/assets"
