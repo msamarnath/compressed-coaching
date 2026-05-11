@@ -5,7 +5,9 @@ import { LoginForm } from "@/components/login-form";
 
 export default function LoginPage() {
 	return (
-		<div className="min-h-screen flex items-center justify-center p-6 bg-background">
+		<div className="min-h-screen bg-background">
+			<div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-indigo-500/10 via-transparent to-transparent" />
+			<div className="relative flex min-h-screen items-center justify-center p-6">
 			<Card className="w-full max-w-md">
 				<CardHeader>
 					<CardTitle>Welcome back</CardTitle>
@@ -21,6 +23,7 @@ export default function LoginPage() {
 					</p>
 				</CardContent>
 			</Card>
+			</div>
 		</div>
 	);
 }

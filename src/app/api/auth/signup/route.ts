@@ -3,7 +3,7 @@ import { ZodError } from "zod";
 
 import { SignupSchema, createSessionForUser, getSessionCookieMaxAgeSeconds, getSessionCookieName } from "@/lib/auth";
 import { getCfEnv } from "@/lib/cf-env";
-import { executeMutation, executeQueryFirst, getDatabase } from "@/lib/d1-client";
+import { executeQueryFirst, getDatabase } from "@/lib/d1-client";
 import { pbkdf2HashPassword } from "@/lib/crypto";
 
 export async function POST(req: Request) {

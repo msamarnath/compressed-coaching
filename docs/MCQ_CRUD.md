@@ -20,6 +20,7 @@ This document defines the requirements for authenticated users to create, view, 
   - Searching
   - Sorting
   - Pagination
+  - Selecting **number of questions per page** (10, 25, 50)
 
 ### CRUD Operations
 - Users must be able to:
@@ -34,6 +35,8 @@ This document defines the requirements for authenticated users to create, view, 
 ### Preview
 - Users must be able to preview an MCQ question.
 - Preview must show the answer choices and clearly identify the correct answer (owner-only).
+- Users must be able to **attempt** the question by selecting an option and submitting.
+- After attempting, the UI must display whether the selection is **correct** or **wrong**, and highlight the correct answer.
 
 ---
 
@@ -48,8 +51,12 @@ This phase is intentionally minimal, enabling you to complete auth first and lan
 
 > No create/edit/delete/search/sort/pagination/bulk/preview required in Phase 1 unless you decide to pull some forward.
 
-### Phase 2+ (Full MCQ CRUD)
-All functionality defined below (search/sort/pagination, CRUD, bulk delete, preview).
+### Phase 2 (Current enhancement scope)
+- Listing page: **search**, **sort**, **pagination**, and **record counts** (e.g., “Showing X–Y of Z”, “N records”)
+- Create page: capture all necessary fields for MCQ creation (prompt, explanation optional, options list, correct answer selection)
+
+### Phase 3+ (Full MCQ CRUD)
+Edit, delete, bulk delete, preview, and advanced list actions.
 
 ---
 
@@ -59,7 +66,7 @@ All functionality defined below (search/sort/pagination, CRUD, bulk delete, prev
 
 ### Data Model Notes
 - A question has:
-  - Question text (prompt)
+  - **Question Title** (stored in DB as `prompt`, surfaced in UI as “Question Title”)
   - Optional metadata (difficulty/tags) (future)
   - Multiple options (typically 4, but allow N)
   - Exactly one correct option
@@ -72,8 +79,10 @@ All functionality defined below (search/sort/pagination, CRUD, bulk delete, prev
 CREATE TABLE IF NOT EXISTS mcq_questions (
   id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
   user_id TEXT NOT NULL,
-  prompt TEXT NOT NULL,
+  prompt TEXT NOT NULL, -- UI: Question Title
   explanation TEXT, -- optional: why the answer is correct (preview/learning)
+  marks INTEGER NOT NULL DEFAULT 1,
+  difficulty TEXT NOT NULL DEFAULT 'Medium', -- Easy | Medium | Hard
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -96,6 +105,31 @@ CREATE TABLE IF NOT EXISTS mcq_options (
 
 CREATE INDEX IF NOT EXISTS idx_mcq_options_question_id ON mcq_options (question_id);
 CREATE INDEX IF NOT EXISTS idx_mcq_options_question_order ON mcq_options (question_id, display_order);
+```
+
+#### Tags (Phase 2 metadata)
+- Tags are user-owned and reusable across questions.
+- Relationship: many-to-many between questions and tags.
+
+```sql
+CREATE TABLE IF NOT EXISTS mcq_tags (
+  id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  user_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_mcq_tags_user_name_unique ON mcq_tags (user_id, name);
+
+CREATE TABLE IF NOT EXISTS mcq_question_tags (
+  question_id TEXT NOT NULL,
+  tag_id TEXT NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (question_id, tag_id),
+  FOREIGN KEY (question_id) REFERENCES mcq_questions(id) ON DELETE CASCADE,
+  FOREIGN KEY (tag_id) REFERENCES mcq_tags(id) ON DELETE CASCADE
+);
 ```
 
 ### Integrity Rules (Enforced in Application Logic)
@@ -136,7 +170,7 @@ For this app, **Offset pagination is acceptable initially**. Cursor pagination c
 Supported sort keys (initial):
 - `created_at` (default): newest first / oldest first
 - `updated_at`: newest first / oldest first
-- `prompt`: A→Z / Z→A
+- `title` (UI: Question Title): A→Z / Z→A
 
 Sort behavior:
 - Always scope to `user_id`.
@@ -153,16 +187,16 @@ Supported initial behavior:
 
 The contracts below can be implemented as **Server Actions** (preferred) or API routes. All actions must verify the authenticated user and enforce ownership.
 
-### List Questions
+### List Questions (implemented as `GET /api/mcq`)
 
-**Action**: `listQuestions({ query, sortBy, sortDir, page, pageSize })`
+**Route**: `GET /api/mcq`
 
 **Inputs**
-- `query` (optional string): search term
-- `sortBy`: `created_at | updated_at | prompt`
+- `q` (optional string): search term (prompt substring match)
+- `sortBy`: `created_at | updated_at | title`
 - `sortDir`: `asc | desc`
 - `page`: 1+
-- `pageSize`: 10–100 (default 10/20)
+- `pageSize`: 10/25/50 (UI selector)
 
 **Response**
 ```json
@@ -185,6 +219,7 @@ The contracts below can be implemented as **Server Actions** (preferred) or API 
 
 **Notes**
 - `optionCount` can be derived via a subquery or join aggregate.
+- Authorization: returns `401` if not logged in.
 
 ### Get Question Detail (for Edit/Preview)
 
@@ -204,15 +239,30 @@ The contracts below can be implemented as **Server Actions** (preferred) or API 
 }
 ```
 
-### Create Question
+### Preview + Attempt (implemented)
 
-**Action**: `createQuestion({ prompt, explanation, options, correctOptionIndex })`
+- **Route**: `GET /mcq/[id]`
+- **Data source**: `GET /api/mcq/[id]`
+- **Attempt behavior** (Phase 2):
+  - User selects an option (radio)
+  - On submit, UI shows:
+    - **Correct** / **Wrong** result indicator
+    - Correct option highlighted
+    - Selected option highlighted if wrong
+  - “Try again” resets the attempt state (client-side)
+
+### Create Question (implemented as `POST /api/mcq`)
+
+**Route**: `POST /api/mcq`
 
 **Validations**
-- `prompt`: required, 1–2000 chars, trimmed
+- `title`: required, 1–2000 chars, trimmed
 - `options`: array length 2–10 (configurable)
 - each `optionText`: required, 1–500 chars, trimmed
 - `correctOptionIndex`: required, must be a valid index into `options`
+- `marks`: integer, 0–1000
+- `difficulty`: enum (`Easy`, `Medium`, `Hard`)
+- `tags`: 0–20 items, 1–40 chars each
 
 **Behavior**
 - Insert into `mcq_questions`
@@ -259,6 +309,26 @@ The contracts below can be implemented as **Server Actions** (preferred) or API 
 
 ### MCQ Listing Page (`/mcq`)
 
+#### Phase 2 Enhancements (Implemented)
+- **Search**: query param `q` (prompt substring match). Submitting search resets the list to page 1.
+- **Sorting (revamped)**: sortable table headers with clear ascending/descending indicators and `aria-sort`.
+- **Questions per page**: accessible selector (10/25/50).
+- **Pagination**: `page` + `pageSize` with Prev/Next controls.
+- **Record counts**:
+  - Top summary: `N records`
+  - Header summary: `Showing X–Y of Z`
+
+#### Sample layout guidance (accessibility + link styling)
+- **Navigation/actions**:
+  - “Add question” is a primary button.
+  - Per-row “Preview / Attempt” is an outline button (keyboard-focusable).
+- **Links**:
+  - Global styling: underlined with offset; includes visible focus outline.
+  - Use for secondary actions like “Back to list”.
+- **Keyboard**:
+  - All actions are reachable with Tab.
+  - Focus ring is visible and high-contrast.
+
 #### Layout
 - Page title: “MCQ Questions”
 - Primary CTA: “Add new question”
@@ -300,18 +370,22 @@ The contracts below can be implemented as **Server Actions** (preferred) or API 
 ### Create/Edit Question Page (`/mcq/new`, `/mcq/[id]/edit`)
 
 #### Form Fields
-- Prompt (textarea)
+- Question Title (textarea)
 - Optional explanation (textarea)
+- Marks (number input)
+- Difficulty Level (dropdown: Easy/Medium/Hard)
+- Tags (free-text with suggestions/autocomplete; multi-value)
 - Options list (repeatable):
   - option text input
   - radio button to mark correct answer
   - add/remove option buttons
 
 #### Validations
-- Prompt required
+- Question Title required
 - Min 2 options
 - Exactly 1 correct answer
 - No empty option texts
+- Marks must be a non-negative integer (0–1000)
 
 #### Actions
 - Save
@@ -324,6 +398,7 @@ The contracts below can be implemented as **Server Actions** (preferred) or API 
 - Options as a list
 - Correct answer visually highlighted (badge/indicator)
 - Optional explanation shown below
+ - Attempt interaction: submit selection and show correct/wrong
 
 #### Access Control
 - Only the owner can preview.
@@ -348,7 +423,7 @@ Validate all input server-side using a schema approach (recommended: Zod).
 
 ## Implementation Phases
 
-### Phase 1: Auth Landing + Empty List - ⏳ PLANNED
+### Phase 1: Auth Landing + Empty List - ✅ COMPLETED
 
 **Objective**: After login, user lands on MCQ list and sees empty state. Logout is available.
 
@@ -362,14 +437,14 @@ Validate all input server-side using a schema approach (recommended: Zod).
 - `/mcq` page with empty state
 - logout accessible post-login
 
-### Phase 2: Create + Preview - ⏳ PLANNED
+### Phase 2: List Enhancements + Create - 🚧 IN PROGRESS
 
-**Objective**: Users can add new questions and preview them.
+**Objective**: Users can manage a scalable list and create new questions.
 
 **Tasks**:
-1. Build create form and server action
-2. Persist question + options
-3. Add preview route/modal
+1. Listing: search/sort/pagination + record counts
+2. Create page (`/mcq/new`) + API (`POST /api/mcq`)
+3. Persist question + options with correct answer selection
 
 ### Phase 3: Edit + Delete - ⏳ PLANNED
 
@@ -379,14 +454,14 @@ Validate all input server-side using a schema approach (recommended: Zod).
 1. Edit form + update action
 2. Row delete action + confirmation
 
-### Phase 4: Search + Sort + Pagination + Bulk Delete - ⏳ PLANNED
+### Phase 4: Bulk Selection + Bulk Delete + Preview - ⏳ PLANNED
 
-**Objective**: Full list management at scale.
+**Objective**: Batch operations and preview flow.
 
 **Tasks**:
-1. Implement list query with filters/sorting/pagination
-2. Add UI controls
-3. Add bulk selection + bulk delete action
+1. Bulk selection UI + bulk delete endpoint
+2. Preview route/modal (show correct answer)
+3. Confirmation dialogs and UX polish
 
 ---
 
@@ -405,6 +480,10 @@ Validate all input server-side using a schema approach (recommended: Zod).
 - [ ] User can delete a question
 - [ ] User can search/sort/paginate their questions
 - [ ] User can multi-select and bulk delete questions
+- [ ] User can select questions per page (10/25/50) and list updates correctly
+- [ ] Sorting is accessible: headers announce sort state (`aria-sort`) and have visible indicators
+- [ ] New fields validate correctly (Marks/Difficulty/Tags)
+- [ ] UI meets WCAG 2.1 AA basics: focus visible, sufficient contrast, keyboard navigable forms/controls
 
 ---
 
@@ -457,8 +536,48 @@ Validate all input server-side using a schema approach (recommended: Zod).
 
 ## Current Status
 
-**Last Updated**: 2026-05-05  
-**Current Phase**: Phase 1 - Auth Landing + Empty List  
-**Status**: ⏳ PLANNED  
-**Next Steps**: Implement auth + protected `/mcq` route that shows the “NO questions created yet” empty state.
+**Last Updated**: 2026-05-08  
+**Current Phase**: Phase 2 - List Enhancements + Create  
+**Status**: 🚧 IN PROGRESS  
+**Next Steps**: Add edit/delete and preview, then bulk delete.
+
+---
+
+## Technical Implementation Details (as implemented)
+
+### Key Files
+- **Database migrations**
+  - `migrations/quizmaker-app-database/0001_init.sql`: Creates `mcq_questions` and `mcq_options`.
+  - `migrations/quizmaker-app-database/0002_mcq_metadata.sql`: Adds `marks`, `difficulty`, and tag tables (`mcq_tags`, `mcq_question_tags`).
+- **Routes (UI)**
+  - `src/app/mcq/page.tsx`: Listing page (search, pagination, page-size selector, sortable headers).
+  - `src/app/mcq/new/page.tsx`: Create question page wrapper.
+  - `src/app/mcq/[id]/page.tsx`: Preview page.
+- **Components**
+  - `src/components/create-mcq-form.tsx`: Create form (Question Title, marks, difficulty, tags, options, correct answer).
+  - `src/components/mcq-attempt.tsx`: Preview + attempt interaction (correct/wrong feedback).
+  - `src/components/ui/textarea.tsx`, `src/components/ui/badge.tsx`: Supporting UI primitives.
+- **API**
+  - `src/app/api/mcq/route.ts`
+    - `GET`: list with `q`, `sortBy`, `sortDir`, `page`, `pageSize`
+    - `POST`: create question + options + tags
+  - `src/app/api/mcq/[id]/route.ts`: detail for preview (includes options with `isCorrect`, plus metadata).
+  - `src/app/api/mcq/tags/route.ts`: returns user tag suggestions (for datalist autocomplete).
+
+### Data & Ownership Enforcement
+- Every query is scoped by authenticated user:
+  - Listing: `WHERE q.user_id = currentUser.id`
+  - Detail: `WHERE id = ? AND user_id = currentUser.id`
+
+### Sorting & Pagination
+- Pagination: offset-based (`LIMIT ? OFFSET ?`) with `page` + `pageSize`.
+- Sorting:
+  - UI “Question Title” maps to DB column `mcq_questions.prompt`.
+  - Table headers drive `sortBy`/`sortDir` and expose `aria-sort` for assistive tech.
+
+### Tags Implementation
+- Tags are **user-owned** (`mcq_tags.user_id`) and linked to questions via `mcq_question_tags`.
+- Create flow:
+  - Upserts tags by `(user_id, name)` uniqueness.
+  - Inserts join rows with `INSERT OR IGNORE`.
 

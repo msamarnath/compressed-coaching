@@ -15,10 +15,10 @@
 		{
 			"binding": "quizmaker_app_database",
 			"database_name": "quizmaker-app-database",
-			"database_id": "370f62d7-ca2b-4667-97d8-f9fd97f7bc38"
+			"database_id": "569b499b-dc58-4c7e-9e57-755efe5e4057",
+			"migrations_dir": "migrations/quizmaker-app-database"
 		}
 	],
-	"migrations_dir": "migrations/quizmaker-app-database",
 	"assets": {
 		"binding": "ASSETS",
 		"directory": ".open-next/assets"

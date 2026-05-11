@@ -239,29 +239,37 @@ This project can implement auth using **Server Actions** rather than REST API ro
 
 ## Implementation Phases
 
-### Phase 1: Database Foundations - ⏳ PLANNED
+### Phase 1: Database + Auth + Protected Landing - ✅ COMPLETED
 
-**Objective**: Create `users` and `sessions` tables with indexes.
-
-**Tasks**:
-1. Add D1 migration for auth tables
-2. Add indexes and uniqueness constraint for `email`
-
-**Deliverables**:
-- Migration SQL(s) covering auth tables
-
-### Phase 2: Auth Flows - ⏳ PLANNED
-
-**Objective**: Signup/login/logout wired end-to-end.
+**Objective**: Implement self sign-up, login, session cookies, logout, and protected navigation to MCQ listing.
 
 **Tasks**:
-1. Signup form + server action
-2. Login form + server action
-3. Logout action + cookie clearing
-4. Session validation helper
+1. Add D1 migration for auth tables (and Phase 1 MCQ tables for empty state)
+2. Bind D1 in `wrangler.jsonc` as `quizmaker_app_database`
+3. Implement signup + login API routes and client forms
+4. Implement logout and session invalidation
+5. Protect `/mcq` and redirect unauthenticated users to `/login`
 
 **Deliverables**:
-- Working auth pages and session cookies
+- Migration: `migrations/quizmaker-app-database/0001_init.sql`
+- Routes: `/signup`, `/login`, `/mcq`
+- API routes: `/api/auth/signup`, `/api/auth/login`, `/api/auth/logout`
+
+### Phase 2: Advanced Auth (Social + Hardening) - ⏳ PLANNED
+
+**Objective**: Improve login UX and security without requiring email/SMTP configuration.
+
+**Tasks**:
+1. **Social login (OAuth)**
+   - Providers: Google, Facebook, LinkedIn
+   - Add `oauth_accounts` table mapping `provider + provider_user_id` → `users.id`
+   - Add OAuth start/callback routes and account linking logic
+2. **Security hardening**
+   - Rate limiting on login/signup endpoints (edge-safe approach)
+   - Optional: session rotation, device/session management UI
+
+**Deliverables**:
+- OAuth sign-in for at least 1 provider (expand to more)
 
 ### Phase 3: Route Protection - ⏳ PLANNED
 
@@ -300,8 +308,8 @@ This project can implement auth using **Server Actions** rather than REST API ro
 
 ## Future Enhancements
 
-- Password reset via email
-- Email verification
+- Email verification (requires email provider / SMTP)
+- Forgot password / password reset (requires email provider / SMTP)
 - “Remember me” session duration toggle
 - Account management page (update profile/password)
 - Admin roles / organization support
@@ -311,7 +319,8 @@ This project can implement auth using **Server Actions** rather than REST API ro
 ## Dependencies
 
 ### External Dependencies
-- None required for baseline auth (no email provider needed unless adding password reset/verification)
+- None required for baseline auth
+- Phase 2 social login will require **OAuth app registrations** with Google/Facebook/LinkedIn
 
 ### Internal Dependencies
 - D1 access via centralized DB client (`lib/d1-client.ts`)
@@ -335,8 +344,54 @@ This project can implement auth using **Server Actions** rather than REST API ro
 
 ## Current Status
 
-**Last Updated**: 2026-05-05  
-**Current Phase**: Phase 1 - Database Foundations  
-**Status**: ⏳ PLANNED  
-**Next Steps**: Define migrations and then implement signup/login UI + server actions.
+**Last Updated**: 2026-05-06  
+**Current Phase**: Phase 1 - Database + Auth + Protected Landing  
+**Status**: ✅ COMPLETED  
+**Next Steps**: Start Phase 2 MCQ CRUD (create/edit/delete/search/sort/pagination) and optionally Phase 2 advanced auth (verification/recovery/social).
+
+---
+
+## Technical Implementation Details (as implemented)
+
+### Key Files
+- `migrations/quizmaker-app-database/0001_init.sql`: Creates `users`, `sessions`, and Phase 1 MCQ tables.
+- `migrations/quizmaker-app-database/0002_mcq_metadata.sql`: Adds MCQ metadata tables/columns (Phase 2 MCQ feature work).
+- `wrangler.jsonc`: D1 binding `quizmaker_app_database` + `migrations_dir` on the D1 entry.
+- `package.json`: Migration scripts (`migrate:local`, `migrate:remote`) and `deploy:with-db`.
+- `src/lib/cf-env.ts`: Reads Worker bindings via `getCloudflareContext().env`.
+- `src/lib/d1-client.ts`: Central D1 helpers (normalizes `?` → `?1`, throws on failed D1 operations).
+- `src/lib/crypto.ts`: Password hashing/verify (PBKDF2-SHA256) and SHA-256 session token hashing.
+- `src/lib/auth.ts`: Session validation + route protection helper (`requireUser()`).
+- `src/app/api/auth/signup/route.ts`: Signup endpoint (creates user, creates session, sets cookie).
+- `src/app/api/auth/login/route.ts`: Login endpoint (verifies password, creates session, sets cookie).
+- `src/app/api/auth/logout/route.ts`: Logout endpoint (revokes session, clears cookie).
+- `src/app/signup/page.tsx`, `src/app/login/page.tsx`: Auth pages.
+- `src/components/signup-form.tsx`, `src/components/login-form.tsx`: Client forms.
+- `src/app/mcq/page.tsx`: Protected landing page with empty-state “NO questions created yet”.
+- `src/app/layout.tsx`: Global accessibility baseline (skip-to-content) and app shell wrapper.
+- `src/app/globals.css`: Global theme tokens + focus/link styling aimed at WCAG-friendly defaults.
+
+### Database Binding Access Pattern
+The application accesses D1 via Cloudflare bindings (no connection string):
+- `getCfEnv()` → `env.quizmaker_app_database` → D1 client helpers.
+
+### Session Implementation
+- Cookie name: `qm_session`
+- Cookie contents: random 32-byte token (hex) (raw token stored only in cookie)
+- DB storage: `sessions.session_token_hash` = SHA-256 of the raw cookie token
+- Validation query: join `sessions` + `users`, ensure `revoked_at IS NULL` and `expires_at > CURRENT_TIMESTAMP`
+
+### Password Hashing
+- Algorithm: PBKDF2 with SHA-256
+- Iterations: 100,000
+- Per-password random salt
+- Stored format: `pbkdf2_sha256$<iterations>$<saltHex>$<hashHex>`
+
+### UI Responsiveness & Accessibility
+- Pages use responsive layouts (`max-w-md`, grid fields in signup collapse on small screens).
+- Inputs have associated `<label>` via `htmlFor` and `id`.
+- Errors are rendered inside an alert container (`role="alert"`).
+- Global skip-to-content link is available for keyboard users.
+- Links have consistent underline + hover + focus-visible styling.
+
 

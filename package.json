@@ -4,7 +4,7 @@
 	"private": true,
 	"scripts": {
 		"migrate:local": "wrangler d1 migrations apply quizmaker-app-database --local -c wrangler.jsonc",
-		"migrate:remote": "wrangler d1 migrations apply quizmaker-app-database -c wrangler.jsonc",
+		"migrate:remote": "wrangler d1 migrations apply quizmaker-app-database --remote -c wrangler.jsonc",
 		"dev": "npm run migrate:local && next dev --turbopack",
 		"build": "next build",
 		"start": "next start",

@@ -45,7 +45,7 @@ export function LoginForm() {
 
 	return (
 		<form className="space-y-4" onSubmit={onSubmit}>
-			{error ? <Alert>{error}</Alert> : null}
+			{error ? <Alert aria-live="polite">{error}</Alert> : null}
 
 			<div className="space-y-2">
 				<Label htmlFor="email">Email</Label>

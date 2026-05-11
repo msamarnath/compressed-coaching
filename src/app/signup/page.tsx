@@ -5,7 +5,9 @@ import { SignupForm } from "@/components/signup-form";
 
 export default function SignupPage() {
 	return (
-		<div className="min-h-screen flex items-center justify-center p-6 bg-background">
+		<div className="min-h-screen bg-background">
+			<div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-emerald-500/10 via-transparent to-transparent" />
+			<div className="relative flex min-h-screen items-center justify-center p-6">
 			<Card className="w-full max-w-md">
 				<CardHeader>
 					<CardTitle>Create your account</CardTitle>
@@ -21,6 +23,7 @@ export default function SignupPage() {
 					</p>
 				</CardContent>
 			</Card>
+			</div>
 		</div>
 	);
 }

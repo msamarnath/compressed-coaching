@@ -47,7 +47,7 @@ export function SignupForm() {
 
 	return (
 		<form className="space-y-4" onSubmit={onSubmit}>
-			{error ? <Alert>{error}</Alert> : null}
+			{error ? <Alert aria-live="polite">{error}</Alert> : null}
 
 			<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 				<div className="space-y-2">
